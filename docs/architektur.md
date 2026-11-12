@@ -138,7 +138,7 @@ Regeln (per Konsist-Architekturtest abgesichert):
 | Kamera | `ActivityResultContracts.TakePicture` + FileProvider | volle Auflösung, keine Kamera-Berechtigung nötig |
 | Secrets | Secrets-Gradle-Plugin | API-Key aus `local.properties`/CI |
 | Qualität | ktlint (Spotless), detekt, Android Lint, Konsist | in CI verpflichtend |
-| Tests | kotlin.test/JUnit 5, Turbine, coroutines-test, Robolectric, Compose UI Test | siehe Abschnitt 6 |
+| Tests | kotlin.test/JUnit 4, Turbine, coroutines-test, Robolectric, Compose UI Test | JUnit 4, weil Robolectric und Compose-UI-Tests JUnit 5 nicht unterstützen; siehe Abschnitt 6 |
 
 Mindest-Android-Version: **aktuelle Version minus 5** (Stand Ende 2026 voraussichtlich Android 12 / API 31; beim
 Projektstart anhand der dann aktuellen Version festlegen). targetSdk/compileSdk = aktuelle Version.
@@ -272,7 +272,7 @@ Mechanismus (entschieden):
 
 | Ebene | Werkzeuge | Gegenstand |
 |---|---|---|
-| Unit (JVM) | kotlin.test/JUnit 5, Turbine, coroutines-test | Value Objects, `Place`, Use Cases, ViewModels, `GeoLinkParser`, `MapsLinkFactory` |
+| Unit (JVM) | kotlin.test/JUnit 4, Turbine, coroutines-test | Value Objects, `Place`, Use Cases, ViewModels, `GeoLinkParser`, `MapsLinkFactory` |
 | Integration | Room in-memory + Robolectric, `MigrationTestHelper` | DAOs, Repository, Migrationen, `FilePhotoStore` |
 | UI | Compose UI Test (Robolectric) | Kernabläufe je Slice |
 | Architektur | Konsist | Slice-Grenzen, Dependency Rule |
