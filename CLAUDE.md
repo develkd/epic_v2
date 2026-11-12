@@ -4,8 +4,8 @@ Leitfaden für Claude Code (und Menschen) in diesem Repository. Die ausführlich
 [`docs/architektur.md`](docs/architektur.md); diese Datei fasst sie zusammen und legt die verbindlichen Prinzipien und
 Arbeitsregeln fest.
 
-> **Stand:** Konzeption, noch kein Produktivcode. Mit **[Annahme]** markierte Punkte sind Vorschläge, die noch nicht
-> ausdrücklich bestätigt sind; **[Offen]** heißt: Entscheidung des Nutzers steht aus.
+> **Stand:** Konzeption vom Nutzer bestätigt, noch kein Produktivcode. Künftig gilt: Neue, noch nicht bestätigte
+> Vorschläge werden mit **[Annahme]** markiert, ausstehende Entscheidungen mit **[Offen]**.
 
 ## 1. Ziel und Umfang
 
@@ -18,7 +18,7 @@ Stack – keine 1:1-Übersetzung des Codes.
 
 - **Plattform:** zuerst Android (APK, gebaut per Gradle/GitHub Actions); **später iOS** über Kotlin Multiplatform.
   Fachlogik deshalb von Anfang an plattformneutral (kein Android, kein `java.*` im fachlichen Kern).
-- **Neue App-ID** – keine Übernahme der Daten aus der alten App. Vorschlag: `de.master.kd.epic2` **[Annahme]**.
+- **Neue App-ID** – keine Übernahme der Daten aus der alten App. App-ID und Paket-Basis: `de.master.kd.epic2`.
 - **Sprachen der App:** Deutsch, Türkisch, Englisch.
 
 | Fachfunktion | v2 |
@@ -92,8 +92,8 @@ Namen und stellt sie als Download bereit (Details in `docs/architektur.md`).
   Epoch-Millis (UTC).
 - Fotos als Dateien im app-internen Speicher (`files/photos/`), in der DB nur der relative Pfad.
 - Schema-Änderungen nur über Room-Migrationen mit exportiertem Schema (`schemas/`) – nie „Drop & Recreate“.
-- Sicherung/Synchronisation ist **standardmäßig aus**; der Nutzer schaltet sie in den Einstellungen ein. Mechanismus
-  **[Offen]** (siehe `docs/architektur.md`).
+- Sicherung/Synchronisation ist **standardmäßig aus**; der Nutzer schaltet sie in den Einstellungen ein. Mechanismus:
+  Export/Import einer Sicherungsdatei an einen vom Nutzer gewählten Ort, optional regelmäßig (siehe `docs/architektur.md`).
 
 ## 5. Schnittstellen
 
@@ -120,8 +120,7 @@ Namen und stellt sie als Download bereit (Details in `docs/architektur.md`).
 ## 7. Konventionen
 
 - **Code auf Englisch** (Bezeichner, Kommentare, Commit-Typen). Doku und PR-Texte auf Deutsch.
-- UI-Texte nur über String-Ressourcen in drei Sprachen: `values/` (Englisch, Fallback), `values-de/`, `values-tr/`
-  **[Annahme: Englisch als Fallback]**. Keine hart codierten Texte.
+- UI-Texte nur über String-Ressourcen in drei Sprachen: `values/` (Englisch, Fallback), `values-de/`, `values-tr/`. Keine hart codierten Texte.
 - Offizielle Kotlin Coding Conventions; ktlint und detekt ohne Befunde.
 - Unveränderliche `data class`es, `sealed interface` für UI-State/Events, kein `!!`.
 - Kein Netzwerk-/Datei-/DB-Zugriff auf dem Main-Thread; Dispatcher per DI.
@@ -147,4 +146,4 @@ Namen und stellt sie als Download bereit (Details in `docs/architektur.md`).
 ## 9. Entscheidungen und offene Punkte
 
 Getroffene Entscheidungen und offene Punkte stehen in [`docs/architektur.md`, Abschnitt 9](docs/architektur.md#9-entscheidungen).
-Offen sind derzeit: Mechanismus der Sicherung/Synchronisation, konkrete App-ID, Compose Multiplatform für die iOS-UI.
+Alle Entscheidungen für den Android-MVP sind getroffen. Die UI-Technik für iOS wird entschieden, wenn iOS ansteht.

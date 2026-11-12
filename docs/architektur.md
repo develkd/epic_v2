@@ -1,7 +1,7 @@
 # Architektur-Konzeption EPIC v2
 
-Ausführliche Fassung zur [CLAUDE.md](../CLAUDE.md). **[Annahme]** = Vorschlag, noch nicht ausdrücklich bestätigt;
-**[Offen]** = Entscheidung des Nutzers nötig.
+Ausführliche Fassung zur [CLAUDE.md](../CLAUDE.md). Die Konzeption ist vom Nutzer bestätigt. Künftige, noch nicht
+bestätigte Vorschläge werden mit **[Annahme]** markiert, ausstehende Entscheidungen mit **[Offen]**.
 
 ## 1. Analyse der Vorlage (develkd/epic)
 
@@ -120,7 +120,7 @@ Regeln (per Konsist-Architekturtest abgesichert):
 - Heute: `:app` (Android). `place/`, Use Cases und Link-Parser/-Bau sind bereits plattformneutral.
 - Später: Modul `:shared` (KMP, `commonMain`) übernimmt diese Teile slice-weise; Room (KMP), Koin und
   `kotlinx-datetime` funktionieren dort ohne Umbau. Android-spezifisch bleiben Standort, Kamera und Karte.
-- iOS-Karte: Google Maps SDK for iOS. UI für iOS **[Offen]**: Compose Multiplatform oder SwiftUI.
+- iOS-Karte: Google Maps SDK for iOS. UI für iOS (Compose Multiplatform oder SwiftUI) wird entschieden, wenn iOS ansteht.
 
 ### 2.4 Tech-Stack
 
@@ -163,7 +163,7 @@ Projektstart anhand der dann aktuellen Version festlegen). targetSdk/compileSdk 
 |---|---|---|
 | Ort | `Place` | gemerkte Position mit Titel, optionaler Beschreibung und Fotos |
 | Koordinate | `Coordinate` | Breiten-/Längengrad; gültig: −90…90 bzw. −180…180 |
-| Titel | `PlaceTitle` | Pflicht, nicht leer, max. Länge **[Annahme: 100 Zeichen]** |
+| Titel | `PlaceTitle` | Pflicht, nicht leer, max. 100 Zeichen |
 | Foto | `PhotoRef` | Verweis auf eine Bilddatei eines Ortes |
 | Ort merken | `RememberPlace` | neuen Ort am aktuellen Standort anlegen |
 | Eingehender Link | `GeoLink` | Google-Maps- oder `geo:`-Link, den eine andere App an EPIC übergibt |
@@ -204,7 +204,7 @@ Browser:
 - Intent-Filter für `https://maps.google.com`, `https://www.google.com/maps` und `geo:`.
 - `GeoLinkParser` (reines Kotlin) erkennt `?q=<lat>,<lng>`, `query=`, `destination=`, `@<lat>,<lng>` und `geo:<lat>,<lng>`;
   liefert `Coordinate?`.
-- Ablauf: Gibt es bereits einen Ort an dieser Koordinate (Toleranz ca. 1 m **[Annahme]**), wird er angezeigt; sonst
+- Ablauf: Gibt es bereits einen Ort an dieser Koordinate (Toleranz ca. 1 m), wird er angezeigt; sonst
   öffnet sich das **Bearbeiten-Formular** mit vorbefüllter Koordinate und Titelvorschlag – gespeichert wird erst durch
   den Nutzer.
 
@@ -262,11 +262,11 @@ Entscheidung: **keine automatische Synchronisation**. In den Einstellungen gibt 
 standardmäßig **aus** ist. Android Auto Backup wird für die App deaktiviert (`allowBackup=false`), damit ohne
 Zustimmung nichts das Gerät verlässt.
 
-Mechanismus **[Offen]**, Vorschlag in dieser Reihenfolge:
+Mechanismus (entschieden):
 1. **Export/Import** einer Sicherungsdatei (ZIP mit JSON + Fotos) an einen vom Nutzer gewählten Ort
    (Storage Access Framework, z. B. Google Drive, Downloads). Funktioniert ohne Server, auch später auf iOS.
-2. Optional: bei eingeschaltetem Schalter regelmäßige Sicherung per WorkManager an den gewählten Ort.
-3. Echte Synchronisation zwischen Geräten (Backend) nur bei Bedarf.
+2. Bei eingeschaltetem Schalter regelmäßige Sicherung per WorkManager an den gewählten Ort.
+3. Echte Synchronisation zwischen Geräten (Backend) ist nicht geplant; nur bei späterem Bedarf neu bewerten.
 
 ## 6. Teststrategie (TDD)
 
@@ -286,7 +286,7 @@ Regeln:
 
 ## 7. Lokalisierung
 
-- Sprachen: Deutsch, Türkisch, Englisch (`values-de/`, `values-tr/`, `values/` = Englisch als Fallback **[Annahme]**).
+- Sprachen: Deutsch, Türkisch, Englisch (`values-de/`, `values-tr/`, `values/` = Englisch als Fallback).
 - Datums- und Zahlenformat nach Gerätesprache; Koordinaten in Links immer mit Punkt.
 - Ein Lint-Check stellt sicher, dass kein String in einer der drei Sprachen fehlt.
 
@@ -325,9 +325,15 @@ Jeder Schritt = eigener Plan mit Rückfrage, eigener Branch, eigener PR.
 | 15 | APK | Debug-APK pro PR mit Build-Version |
 | 16 | Google-Maps-Links | plattformübergreifende URLs (`https://www.google.com/maps/...?api=1`) |
 | 17 | API-Key | derselbe Key wie in der Vorlage, nur über `local.properties`/GitHub-Secret |
+| 18 | Sicherungs-Mechanismus | Export/Import einer Datei (ZIP mit JSON + Fotos) an einen vom Nutzer gewählten Ort; bei eingeschaltetem Schalter zusätzlich regelmäßig per WorkManager |
+| 19 | App-ID / Paket | `de.master.kd.epic2` |
+| 20 | Fallback-Sprache | Englisch |
+| 21 | Titel-Länge, Koordinaten-Toleranz | max. 100 Zeichen; ca. 1 m |
 
-Offen:
-- Mechanismus der Sicherung (Vorschlag: Export/Import-Datei).
-- Konkrete App-ID (Vorschlag: `de.master.kd.epic2`).
-- UI-Technik für iOS (Compose Multiplatform oder SwiftUI).
-- Fallback-Sprache (Vorschlag: Englisch).
+Später zu entscheiden: UI-Technik für iOS (Compose Multiplatform oder SwiftUI), wenn iOS ansteht.
+
+### Aufgaben des Nutzers (außerhalb des Repositorys)
+
+- Google-Maps-API-Key in der Google Cloud Console auf Android-Apps beschränken und App-ID `de.master.kd.epic2` mit dem
+  SHA-1-Fingerabdruck des Signaturschlüssels eintragen (Debug-Schlüssel für CI-APKs, später Release-Schlüssel).
+- Key als Repository-Secret `MAPS_API_KEY` in GitHub hinterlegen.
