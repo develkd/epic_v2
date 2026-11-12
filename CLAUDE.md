@@ -18,7 +18,7 @@ Stack – keine 1:1-Übersetzung des Codes.
 
 - **Plattform:** zuerst Android (APK, gebaut per Gradle/GitHub Actions); **später iOS** über Kotlin Multiplatform.
   Fachlogik deshalb von Anfang an plattformneutral (kein Android, kein `java.*` im fachlichen Kern).
-- **Neue App-ID** – keine Übernahme der Daten aus der alten App. App-ID und Paket-Basis: `de.master.kd.epic2`.
+- **Neue App-ID** – keine Übernahme der Daten aus der alten App. App-ID und Paket-Basis: `de.kd.epic2`.
 - **Sprachen der App:** Deutsch, Türkisch, Englisch.
 
 | Fachfunktion | v2 |
@@ -57,7 +57,7 @@ Zum Start **ein Gradle-Modul `:app`**, gegliedert in Pakete pro Slice. Für iOS 
 ein KMP-Modul `:shared` verschoben – die Slices bleiben dabei erhalten.
 
 ```
-de/master/kd/epic2/
+de/kd/epic2/
   place/              Gemeinsamer fachlicher Kern: Aggregat Place, Value Objects, PlaceRepository (Port)
   rememberplace/      Slice: Ort am aktuellen Standort merken
   editplace/          Slice: Ort bearbeiten (auch Ziel eingehender Links)

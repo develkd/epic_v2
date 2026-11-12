@@ -81,7 +81,7 @@ Tabelle `position`:
 ### 2.2 Paketstruktur (ein Gradle-Modul `:app`)
 
 ```
-app/src/main/kotlin/de/master/kd/epic2/
+app/src/main/kotlin/de/kd/epic2/
   place/
     Place.kt                 Aggregat (id, title, description, coordinate, photos, createdAt, updatedAt)
     PlaceId.kt, PlaceTitle.kt, Coordinate.kt, PhotoRef.kt     Value Objects
@@ -326,7 +326,7 @@ Jeder Schritt = eigener Plan mit Rückfrage, eigener Branch, eigener PR.
 | 16 | Google-Maps-Links | plattformübergreifende URLs (`https://www.google.com/maps/...?api=1`) |
 | 17 | API-Key | derselbe Key wie in der Vorlage, nur über `local.properties`/GitHub-Secret |
 | 18 | Sicherungs-Mechanismus | Export/Import einer Datei (ZIP mit JSON + Fotos) an einen vom Nutzer gewählten Ort; bei eingeschaltetem Schalter zusätzlich regelmäßig per WorkManager |
-| 19 | App-ID / Paket | `de.master.kd.epic2` |
+| 19 | App-ID / Paket | `de.kd.epic2` |
 | 20 | Fallback-Sprache | Englisch |
 | 21 | Titel-Länge, Koordinaten-Toleranz | max. 100 Zeichen; ca. 1 m |
 
@@ -334,6 +334,6 @@ Später zu entscheiden: UI-Technik für iOS (Compose Multiplatform oder SwiftUI)
 
 ### Aufgaben des Nutzers (außerhalb des Repositorys)
 
-- Google-Maps-API-Key in der Google Cloud Console auf Android-Apps beschränken und App-ID `de.master.kd.epic2` mit dem
+- Google-Maps-API-Key in der Google Cloud Console auf Android-Apps beschränken und App-ID `de.kd.epic2` mit dem
   SHA-1-Fingerabdruck des Signaturschlüssels eintragen (Debug-Schlüssel für CI-APKs, später Release-Schlüssel).
 - Key als Repository-Secret `MAPS_API_KEY` in GitHub hinterlegen.
