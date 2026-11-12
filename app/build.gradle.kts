@@ -55,6 +55,13 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Unit tests run against the debug variant only: the Compose test activity is only merged into debug builds.
+androidComponents {
+    beforeVariants(selector().withBuildType("release")) { variantBuilder ->
+        variantBuilder.enableUnitTest = false
+    }
+}
+
 detekt {
     buildUponDefaultConfig = true
     config.setFrom(rootProject.file("config/detekt/detekt.yml"))
