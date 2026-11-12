@@ -1,147 +1,150 @@
 # CLAUDE.md – EPIC v2
 
 Leitfaden für Claude Code (und Menschen) in diesem Repository. Die ausführliche Architektur-Konzeption steht in
-[`docs/architektur.md`](docs/architektur.md); diese Datei fasst sie zusammen und legt die Arbeitsregeln fest.
+[`docs/architektur.md`](docs/architektur.md); diese Datei fasst sie zusammen und legt die verbindlichen Prinzipien und
+Arbeitsregeln fest.
 
-> **Stand:** Konzeption, noch kein Produktivcode. Alles, was mit **[Annahme]** oder **[Offen]** markiert ist, ist noch
-> nicht vom Nutzer bestätigt und muss vor bzw. bei der Umsetzung entschieden werden (Liste unten).
+> **Stand:** Konzeption, noch kein Produktivcode. Mit **[Annahme]** markierte Punkte sind Vorschläge, die noch nicht
+> ausdrücklich bestätigt sind; **[Offen]** heißt: Entscheidung des Nutzers steht aus.
 
 ## 1. Ziel und Umfang
 
-EPIC („Every-Position-In-Charge“) ist eine **Android-App**, mit der man Orte merkt (z. B. wo das Auto/Fahrrad steht),
-sie auf einer Karte wiederfindet, dorthin navigiert und sie mit anderen teilt.
+EPIC („Every-Position-In-Charge“) ist eine App, mit der man **Orte merkt** (z. B. wo Auto oder Fahrrad steht), sie auf
+einer Karte wiederfindet, dorthin navigiert und sie mit anderen teilt.
 
 `epic_v2` ist **Redesign und Rewrite in Kotlin** der Vorlage [develkd/epic](https://github.com/develkd/epic)
-(Java, 2017, Android SDK 25, nur lesen). Ziel ist **funktionale Parität** mit der Vorlage auf einem modernen,
-testbaren Stack – nicht eine 1:1-Übersetzung des Codes.
+(Java, 2017, Android SDK 25, nur lesen). Ziel ist **funktionale Parität** mit der Vorlage auf einem modernen, testbaren
+Stack – keine 1:1-Übersetzung des Codes.
 
-Funktionsumfang der Vorlage (= Umfang v2, MVP):
+- **Plattform:** zuerst Android (APK, gebaut per Gradle/GitHub Actions); **später iOS** über Kotlin Multiplatform.
+  Fachlogik deshalb von Anfang an plattformneutral (kein Android, kein `java.*` im fachlichen Kern).
+- **Neue App-ID** – keine Übernahme der Daten aus der alten App. Vorschlag: `de.master.kd.epic2` **[Annahme]**.
+- **Sprachen der App:** Deutsch, Türkisch, Englisch.
 
-| Funktion | Vorlage | v2 |
-|---|---|---|
-| Karte mit eigener Position (GPS/Netzwerk), Marker aller gespeicherten Orte | ja | MVP |
-| Aktuelle Position merken (Titel, Beschreibung, Foto, Karten-Vorschaubild) | ja | MVP |
-| Ort bearbeiten / löschen (aus Karte und Liste) | ja | MVP |
-| Liste aller Orte (Foto, Karte, Titel, Datum, Beschreibung) | ja | MVP |
-| Teilen als Text mit Maps-Link und Adresse (Reverse-Geocoding) | ja | MVP |
-| Route/Navigation zu einem Ort über externe Navi-App | ja | MVP |
-| Eingehende Maps-Links (`maps.google.com/?q=lat,lng`) öffnen und als Ort „Incoming“ speichern | ja | MVP |
-| Synchronisieren | nur Platzhalter („nicht freigeschaltet“) | **[Offen]** |
-| Navigation-Drawer (Import, Galerie, …) | ungenutzte Vorlage | entfällt **[Annahme]** |
+| Fachfunktion | v2 |
+|---|---|
+| Karte (Google Maps, in der App) mit eigenem Standort und Markern aller gemerkten Orte | MVP |
+| Aktuellen Standort als Ort merken (Titel, Beschreibung, **mehrere Fotos**) | MVP |
+| Ort bearbeiten / löschen (aus Karte und Liste) | MVP |
+| Liste aller Orte (Fotos, Titel, Datum, Beschreibung) | MVP |
+| Ort teilen (Text mit Google-Maps-Link und Adresse) | MVP |
+| Route zum Ort über die Google-Maps-App | MVP |
+| Eingehende Google-Maps-Links öffnen → **Bearbeiten-Formular**, vorbefüllt | MVP |
+| Sicherung/Synchronisation – **standardmäßig aus**, vom Nutzer einschaltbar | nach MVP |
+| Karten-Vorschaubild | entfällt |
+| Navigation-Drawer der Vorlage | entfällt |
 
-## 2. Fachliche Domänen
+## 2. Verbindliche Prinzipien
 
-Eine zentrale Entität **Position** (gemerkter Ort) und vier fachliche Bereiche:
-
-- **Positionen** – Anlegen, Ändern, Löschen, Auflisten, Suchen per Koordinate.
-- **Standort** – Berechtigungen, Ortungsdienst an/aus, laufende Standort-Updates.
-- **Medien** – Foto zur Position, Karten-Vorschaubild, Ablage im App-Speicher.
-- **Teilen & Navigation** – Share-Text, Reverse-Geocoding, Route-Intent, eingehende Geo-Links.
-
-Datenmodell (Kotlin, v2):
-
-```kotlin
-data class Position(
-    val id: PositionId,          // Long, von Room vergeben
-    val title: String,           // Pflicht
-    val description: String?,
-    val coordinate: Coordinate,  // latitude/longitude als Double (Vorlage: TEXT)
-    val photo: ImageRef?,        // Datei im App-Speicher
-    val mapPreview: ImageRef?,
-    val createdAt: Instant,
-    val updatedAt: Instant?,
-)
-```
+1. **Vertical Slice Architecture** – Code wird nach Fachfunktionen geschnitten, nicht nach technischen Schichten. Jeder
+   Slice enthält alles für seine Funktion (UI, ViewModel, Use Case, ggf. eigener Adapter).
+2. **Screaming Architecture (Uncle Bob)** – die Paketstruktur „schreit“ die Fachlichkeit: Wer den Verzeichnisbaum sieht,
+   erkennt, was die App tut (`rememberplace`, `shareplace` …), nicht welches Framework sie nutzt.
+3. **Domain-Driven Design** – Ubiquitous Language (Glossar in `docs/architektur.md`), ein Aggregat `Place`, Value
+   Objects (`Coordinate`, `PlaceTitle`, `PhotoRef` …) mit Validierung im Konstruktor, Repository als Port.
+4. **SOLID** – kleine Klassen mit einer Verantwortung, Abhängigkeiten auf Interfaces (Ports), Implementierungen
+   austauschbar; Fachlogik hängt nie von Framework-Code ab (Dependency Rule aus Clean Architecture).
+5. **Clean Code** – sprechende Namen, kleine Funktionen, keine Kommentare als Ersatz für klaren Code, keine toten
+   Codepfade, keine Magic Numbers.
+6. **Test-Driven Development** – Red → Green → Refactor: erst ein fehlschlagender Test, dann minimaler Code, dann
+   aufräumen. Kein Produktivcode ohne vorherigen Test.
+7. **Minimale Änderungen** – nur den Code ändern, der für die Aufgabe nötig ist. Kein „Aufräumen nebenbei“, keine
+   unaufgeforderten Umformatierungen; Verbesserungsideen stattdessen als Vorschlag melden.
 
 ## 3. Zielarchitektur (Kurzfassung)
 
-- **Clean Architecture light + MVVM/UDF**: `UI (Compose) → ViewModel (StateFlow) → UseCases → Repository-Interfaces`
-  im Domain-Layer, Implementierungen im Data-Layer. Domain ist reines Kotlin ohne Android-Abhängigkeiten.
-- **Gradle-Module** (Kotlin DSL, Version Catalog `gradle/libs.versions.toml`, Convention-Plugins in `build-logic/`):
+Zum Start **ein Gradle-Modul `:app`**, gegliedert in Pakete pro Slice. Für iOS wird der plattformneutrale Teil später in
+ein KMP-Modul `:shared` verschoben – die Slices bleiben dabei erhalten.
 
 ```
-:app                      Application, Navigation, DI-Wurzel, Manifest/Deep-Links
-:core:model               Domänenmodell (reines Kotlin)
-:core:domain              UseCases, Repository-/Port-Interfaces (reines Kotlin)
-:core:data                Repository-Implementierungen
-:core:database            Room (Entities, DAO, Migrationen)
-:core:location            Fused Location, Berechtigungen, Geocoder
-:core:media               Foto/Vorschaubild speichern & laden
-:core:ui                  Theme, gemeinsame Compose-Komponenten
-:feature:map              Kartenansicht, Marker, Aktionsmenü
-:feature:positions        Liste der Orte
-:feature:position-edit    Anlegen/Bearbeiten inkl. Foto
+de/master/kd/epic2/
+  place/              Gemeinsamer fachlicher Kern: Aggregat Place, Value Objects, PlaceRepository (Port)
+  rememberplace/      Slice: Ort am aktuellen Standort merken
+  editplace/          Slice: Ort bearbeiten (auch Ziel eingehender Links)
+  deleteplace/        Slice: Ort löschen (inkl. Fotos)
+  listplaces/         Slice: Liste aller Orte
+  showmap/            Slice: Karte mit eigenem Standort und Markern
+  shareplace/         Slice: Ort teilen
+  routetoplace/       Slice: Route über Google Maps starten
+  receivegeolink/     Slice: eingehenden Google-Maps-Link auswerten
+  backup/             Slice: Sicherung (opt-in) – nach MVP
+  location/           Fähigkeit: Standort und Berechtigungen
+  infrastructure/     Room-DB, Dateispeicher, Google-Maps-Links, Koin-Module
+  app/                Application, MainActivity, Navigation, Theme
 ```
 
-- **Tech-Stack-Vorschlag** **[Annahme]**: Kotlin 2.x, Jetpack Compose + Material 3, Navigation Compose,
-  Hilt, Coroutines/Flow, Room (KSP), Play Services Location, Maps Compose **[Offen: Kartenanbieter]**, Coil,
-  `ActivityResultContracts.TakePicture` (+ FileProvider), `java.time`, minSdk 26 / target = aktuelles SDK.
-- **Build**: Gradle Wrapper, `./gradlew build` (Kompilieren, Lint, Tests). Qualität: ktlint (bzw. Spotless) + detekt.
+Innerhalb eines Slice: `…Screen` (Compose) → `…ViewModel` (StateFlow) → `…UseCase` → Ports aus `place/` bzw. dem Slice.
+Use Cases und `place/` sind reines Kotlin (keine Android-Imports). Slices rufen sich nicht gegenseitig auf; Gemeinsames
+liegt in `place/`, `location/` oder `infrastructure/`.
 
-Details, Begründungen und Abläufe: [`docs/architektur.md`](docs/architektur.md).
+**Tech-Stack:** Kotlin 2.x, Jetpack Compose + Material 3, Navigation Compose, **Koin** (DI, auch für KMP/iOS geeignet),
+Coroutines/Flow, **Room** (KMP-fähig, KSP), `kotlinx-datetime`, Play Services Location, **Maps Compose (Google Maps)**,
+Coil 3. **minSdk = aktuelle Android-Version minus 5** (Stand Ende 2026 voraussichtlich Android 12 / API 31 – beim
+Projektstart prüfen), targetSdk = aktuell.
+
+**Build:** Gradle Wrapper, Kotlin DSL, Version Catalog `gradle/libs.versions.toml`. `./gradlew build` kompiliert, prüft
+(ktlint, detekt, Android Lint) und testet. GitHub Actions baut bei jedem PR eine **Debug-APK mit Build-Version** im
+Namen und stellt sie als Download bereit (Details in `docs/architektur.md`).
 
 ## 4. Datenhaltung
 
-- Lokal in **Room** (SQLite), Tabelle `position`; Koordinaten als `REAL`, Zeitstempel als Epoch-Millis (UTC).
-- Bilder als Dateien im app-internen Speicher (`filesDir/images/`), in der DB nur der relative Pfad.
-- Schema-Änderungen ausschließlich über **Room-Migrationen** mit exportiertem Schema (`schemas/`) – kein
-  „Drop & Recreate“ wie in der Vorlage.
-- Kein Server, kein Konto. **[Offen]** Sync/Backend.
+- Lokal in **Room**: Tabellen `place` und `photo` (mehrere Fotos pro Ort); Koordinaten als `REAL`, Zeitstempel als
+  Epoch-Millis (UTC).
+- Fotos als Dateien im app-internen Speicher (`files/photos/`), in der DB nur der relative Pfad.
+- Schema-Änderungen nur über Room-Migrationen mit exportiertem Schema (`schemas/`) – nie „Drop & Recreate“.
+- Sicherung/Synchronisation ist **standardmäßig aus**; der Nutzer schaltet sie in den Einstellungen ein. Mechanismus
+  **[Offen]** (siehe `docs/architektur.md`).
 
 ## 5. Schnittstellen
 
 | Richtung | Schnittstelle |
 |---|---|
-| Eingehend | Deep-Link `http(s)://maps.google.com/?q=<lat>,<lng>` → Ort finden oder als „Incoming“ anlegen; zusätzlich `geo:`-URIs **[Annahme]** |
-| Ausgehend | Share-Intent `text/plain`: Betreff = Titel + Adresse, Text = `https://maps.google.com/?q=<lat>,<lng>` |
-| Ausgehend | Route: `google.navigation:q=<lat>,<lng>`, Fallback `geo:`-Intent für andere Navi-Apps **[Annahme]** |
-| Extern | Android `Geocoder` (Reverse-Geocoding), Fused Location Provider |
-| Extern | Karten-SDK + Static-Map-Vorschaubild **[Offen: Anbieter, API-Key-Handling]** |
+| Teilen | Share-Text mit Titel, Adresse und `https://www.google.com/maps/search/?api=1&query=<lat>,<lng>` |
+| Route | `https://www.google.com/maps/dir/?api=1&destination=<lat>,<lng>` – öffnet die Google-Maps-App (Android und iOS), sonst den Browser |
+| Eingehend | Google-Maps-Links (`maps.google.com/?q=…`, `www.google.com/maps/…?query=…`/`destination=…`) und `geo:`-URIs → Bearbeiten-Formular |
+| Karte | Google Maps SDK über Maps Compose; später iOS: Google Maps SDK for iOS |
+| Extern | Fused Location Provider, Android `Geocoder` (Adresse beim Teilen) |
 
-API-Keys **nie** ins Repository: Einbindung über `local.properties`/CI-Secret
-(z. B. Secrets-Gradle-Plugin). Hinweis: Die Vorlage enthält einen eingecheckten Maps-Key – nicht übernehmen.
+**Google-Maps-API-Key:** Es wird der bestehende Key der Vorlage weiterverwendet – aber **nie im Repository**. Lokal in
+`local.properties` (`MAPS_API_KEY=…`), in CI als GitHub-Secret `MAPS_API_KEY`; Einbindung per Secrets-Gradle-Plugin.
 
 ## 6. Teststrategie
 
-- **Unit-Tests** (JUnit 5, kotlin.test/AssertJ, MockK, Turbine, `kotlinx-coroutines-test`) für Domain, UseCases,
-  ViewModels, Parser (Geo-Link) – Pflicht für jede neue Logik.
-- **Integrationstests**: Room-DAO und Migrationen (in-memory, Robolectric bzw. instrumentiert).
-- **UI-Tests**: Compose UI Tests für Kernabläufe (Ort merken, bearbeiten, löschen, Liste).
-- Fakes statt Mocks für Repositories bevorzugen; Domain-Layer ohne Android testbar.
-- CI (GitHub Actions) **[Annahme]**: `./gradlew build` auf jedem PR gegen `develop`.
+- **TDD für jede Änderung** (siehe Prinzipien). Ein PR wird erst gestellt, wenn **alle Tests grün** sind.
+- **Unit-Tests** (kotlin.test/JUnit 5, Turbine, `kotlinx-coroutines-test`; Fakes statt Mocks) für `place/`, Use Cases,
+  ViewModels, Link-Bau und Link-Parser.
+- **Integrationstests**: Room-DAOs und Migrationen (in-memory, Robolectric).
+- **UI-Tests**: Compose UI Tests für die Kernabläufe der Slices.
+- **Architekturtests** (Konsist): Slices importieren sich nicht gegenseitig; `place/` und Use Cases ohne Android-Imports.
 
 ## 7. Konventionen
 
-- Sprache: Code, Bezeichner, Commit-Typen auf **Englisch**; Doku, PR-Texte und UI-Texte (Strings) auf **Deutsch**
-  (UI-Texte über `strings.xml`, nie hart codiert).
-- Paket-Basis: `de.master.kd.epic` **[Offen: gleiche `applicationId` wie Vorlage?]**.
-- Kotlin-Style: offizielle Kotlin Coding Conventions, ktlint/detekt ohne Warnungen.
-- Unveränderliche `data class`es, `sealed interface` für UI-State/Events, keine `!!`.
-- Kein Netzwerk/Datei-IO auf dem Main-Thread (Dispatchers per DI injizieren).
-- Commits: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `build:`, `chore:`).
+- **Code auf Englisch** (Bezeichner, Kommentare, Commit-Typen). Doku und PR-Texte auf Deutsch.
+- UI-Texte nur über String-Ressourcen in drei Sprachen: `values/` (Englisch, Fallback), `values-de/`, `values-tr/`
+  **[Annahme: Englisch als Fallback]**. Keine hart codierten Texte.
+- Offizielle Kotlin Coding Conventions; ktlint und detekt ohne Befunde.
+- Unveränderliche `data class`es, `sealed interface` für UI-State/Events, kein `!!`.
+- Kein Netzwerk-/Datei-/DB-Zugriff auf dem Main-Thread; Dispatcher per DI.
+- Commits: Conventional Commits (`feat:`, `fix:`, `test:`, `refactor:`, `docs:`, `build:`, `chore:`).
 
-## 8. Arbeitsregeln
+## 8. Arbeitsregeln für Claude
 
+- **Keine Umsetzung ohne Rückfrage:** Vor jeder Aufgabe bzw. jedem PR einen kurzen Plan (Was, welche Slices/Dateien,
+  welche Tests) und offene Fragen vorlegen und auf das OK des Nutzers warten.
+- **Verbesserungstipps geben:** Bei jeder Aufgabe aktiv Verbesserungen vorschlagen (Architektur, Fachlichkeit, Tests,
+  UX) – als Vorschlag, nicht eigenmächtig umsetzen.
+- **Nur den zu ändernden Code anfassen** (siehe Prinzip 7).
 - **Niemals direkt auf `develop` pushen.** `develop` erhält Änderungen ausschließlich über gemergte Pull Requests –
-  auch bei kleinen Korrekturen, auch beim ersten Commit, und **nie per Force-Push**.
-- Jede Änderung entsteht auf einem **eigenen Branch** von `origin/develop`
-  (`feature/…`, `fix/…`, `docs/…`, `refactor/…`, `build/…`) und geht per **Pull Request gegen `develop`**.
-- PR-Texte auf Deutsch; PR-Vorlage beachten, falls vorhanden. Merges macht der Nutzer bzw. erfolgen nach Review.
+  auch bei kleinen Korrekturen und beim ersten Commit, **nie per Force-Push**.
+- Jede Änderung auf einem **eigenen Branch** von `origin/develop` (`feature/…`, `fix/…`, `docs/…`, `refactor/…`,
+  `build/…`) und per **Pull Request gegen `develop`**, erst wenn alle Tests grün sind. PR-Texte auf Deutsch;
+  PR-Vorlage beachten, falls vorhanden. Gemergt wird vom Nutzer.
 - `develkd/epic` ist **nur Vorlage zum Lesen** – dort nichts ändern.
 - **Skill `neue-session`** unter `.claude/skills/neue-session/SKILL.md`: Verlangt der Nutzer eine neue Session, wird
-  zuerst eine komplett neue Session erstellt und die Anweisung dort ausgeführt (Details im Skill).
-- Annahmen und offene Entscheidungen in Doku und PRs immer als solche kennzeichnen; Architektur-Änderungen in
-  `docs/architektur.md` nachziehen.
+  zuerst eine komplett neue Session erstellt und die Anweisung dort ausgeführt.
+- Annahmen und offene Entscheidungen immer kennzeichnen; Architektur-Änderungen in `docs/architektur.md` nachziehen.
 
-## 9. Offene Entscheidungen (Kurzliste)
+## 9. Entscheidungen und offene Punkte
 
-1. **Kartenanbieter**: Google Maps (Maps Compose, API-Key, Play Services) vs. OpenStreetMap (MapLibre/osmdroid, kein Key).
-2. **Karten-Vorschaubild**: Static-Maps-API (Key, Kosten) vs. Snapshot der eingebetteten Karte vs. weglassen.
-3. **Datenübernahme**: Gleiche `applicationId` und Migration der alten DB (`de.master.kd.epic.sql.db`, Texte/Datumsformat
-   `dd.MM.yyyy HH.mm.ss`) – oder Neuinstallation ohne Übernahme.
-4. **Sync/Backup**: entfällt, Android Auto Backup, Export/Import-Datei oder echtes Backend.
-5. **DI**: Hilt (Vorschlag) vs. Koin.
-6. **minSdk** (Vorschlag 26) und Mindest-Android-Version der Zielgruppe.
-7. **Plattform**: nur Android (Vorschlag) oder später Kotlin Multiplatform (iOS).
-8. **Foto**: Vollauflösung über FileProvider (Vorschlag) statt Thumbnail wie in der Vorlage; mehrere Fotos pro Ort?
-9. **Sprachen**: nur Deutsch oder Deutsch + Englisch.
+Getroffene Entscheidungen und offene Punkte stehen in [`docs/architektur.md`, Abschnitt 9](docs/architektur.md#9-entscheidungen).
+Offen sind derzeit: Mechanismus der Sicherung/Synchronisation, konkrete App-ID, Compose Multiplatform für die iOS-UI.
