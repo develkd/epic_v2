@@ -111,7 +111,7 @@ Namen und stellt sie als Download bereit (Details in `docs/architektur.md`).
 ## 6. Teststrategie
 
 - **TDD für jede Änderung** (siehe Prinzipien). Ein PR wird erst gestellt, wenn **alle Tests grün** sind.
-- **Unit-Tests** (kotlin.test/JUnit 5, Turbine, `kotlinx-coroutines-test`; Fakes statt Mocks) für `place/`, Use Cases,
+- **Unit-Tests** (kotlin.test/JUnit 4, Turbine, `kotlinx-coroutines-test`; Fakes statt Mocks) für `place/`, Use Cases,
   ViewModels, Link-Bau und Link-Parser.
 - **Integrationstests**: Room-DAOs und Migrationen (in-memory, Robolectric).
 - **UI-Tests**: Compose UI Tests für die Kernabläufe der Slices.
